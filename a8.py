@@ -1,6 +1,23 @@
 from neural import *
 import pandas as pd
+from typing import Tuple
 print("<<<<<<<<<<<<<< XOR >>>>>>>>>>>>>>\n")
+
+def reverseparse_line(line: str) -> Tuple[List[float], List[float]]:
+    """Splits line of CSV into inputs and output (transforming the last value as appropriate)
+
+    Args:
+        line - one line of the CSV as a string
+
+    Returns:
+        tuple of input list and output list
+    """
+    tokens = line.split(",")
+    out = float(tokens[-1]) 
+    output = [1 if out == 1 else 0.5 if out == 2 else 1]  
+
+    inpt = [float(x) for x in tokens[:-1]]  
+    return (inpt, output)
 
 def normalize(data: List[Tuple[List[float], List[float]]]):
     """Makes the data range for each input feature from 0 to 1
@@ -107,15 +124,12 @@ def normalize(data: List[Tuple[List[float], List[float]]]):
 
 df = pd.read_csv("waterQ.csv")
 
-# Extract specific columns
-columnsToextract = [
-    "ph", "Hardness", "Solids", "Chloramines",
-    "Sulfate", "Conductivity", "Organic_carbon",
-    "Trihalomethanes", "Turbidity", "Potability"
-]
 
-waterData = df[columnsToextract]
+
+
 waterData=normalize(waterData)
-nwaterData=[
-    (row[:-1].tolist(), [row[-1]]) for row in waterData.values
-]
+
+wa=NeuralNet(9,5,1)
+wa.train(waterData)
+print(wa.get_ih_weights())
+print(wa.get_ho_weights())
