@@ -1,34 +1,20 @@
 from neural import *
 import pandas as pd
-from typing import Tuple
+from typing import Tuple, List
+import csv
+
 print("<<<<<<<<<<<<<< XOR >>>>>>>>>>>>>>\n")
 
 def reverseparse_line(line: str) -> Tuple[List[float], List[float]]:
-    """Splits line of CSV into inputs and output (transforming the last value as appropriate)
-
-    Args:
-        line - one line of the CSV as a string
-
-    Returns:
-        tuple of input list and output list
-    """
     tokens = line.split(",")
-    out = float(tokens[-1]) 
-    output = [1 if out == 1 else 0.5 if out == 2 else 1]  
-
-    inpt = [float(x) for x in tokens[:-1]]  
-    return (inpt, output)
-
+    if len(tokens) < 2:
+        raise ValueError(f"Invalid line format: {line}")
+    inputs = [float(token) for token in tokens[:-1]]
+    output = [float(tokens[-1])]  
+    return inputs, output
+    
 def normalize(data: List[Tuple[List[float], List[float]]]):
-    """Makes the data range for each input feature from 0 to 1
-
-    Args:
-        data - list of (input, output) tuples
-
-    Returns:
-        normalized data where input features are mapped to 0-1 range (output already
-        mapped in parse_line)
-    """
+    """Makes the data range for each input feature from 0 to 1."""
     leasts = len(data[0][0]) * [100.0]
     mosts = len(data[0][0]) * [0.0]
 
@@ -44,92 +30,35 @@ def normalize(data: List[Tuple[List[float], List[float]]]):
             data[i][0][j] = (data[i][0][j] - leasts[j]) / (mosts[j] - leasts[j])
     return data
 
-# print("\n\nTraining h\n\n")
-# h_data = [
-#     ([1, 0, 1, 0, 0, 0], [1]),
-#     ([1, 0, 1, 1, 0, 0], [1]),
-#     ([1, 0, 1, 0, 1, 0], [1]),
-#     ([1, 1, 0, 0, 1, 1], [1]),
-#     ([1, 1, 1, 1, 0, 0], [1]),
-#     ([1, 0, 0, 0, 1, 1], [1]),
-#     ([1, 0, 0, 0, 1, 0], [0]),
-#     ([0, 1, 1, 1, 0, 1], [1]),
-#     ([0, 1, 1, 0, 1, 1], [0]),
-#     ([0, 0, 0, 1, 1, 0], [0]),
-#     ([0, 1, 0, 1, 0, 1], [0]),
-#     ([0, 0, 0, 1, 0, 1], [0]),
-#     ([0, 1, 1, 0, 1, 1], [0]),
-#     ([0, 1, 1, 1, 0, 0], [0]),
-# ]
+# Use pandas to handle missing values
+df = pd.read_csv('waterQ.csv')
 
-# h = NeuralNet(6, 5, 1)
-# h.train(h_data)
+# Replace missing values with the median of each column
+df.fillna(df.median(), inplace=True)
 
-# print(h.get_ih_weights())
-# print()
-# print(h.get_ho_weights())
+# Save the cleaned dataset back to a CSV file for further processing
+df.to_csv('cleaned_waterQ.csv', index=False)
 
-# print(h.evaluate([1, 1, 1, 1, 1, 1]))
-# print(h.evaluate([0, 0, 0, 0, 0, 0]))
-# print()
-# print(h.evaluate([1, 0, 0, 0, 0, 0]))  
-# print(h.evaluate([0, 1, 0, 0, 0, 0]))  
-# print(h.evaluate([0, 0, 1, 0, 0, 0]))  
-# print(h.evaluate([0, 0, 0, 1, 0, 0]))  
-# print(h.evaluate([0, 0, 0, 0, 1, 0]))  
-# print(h.evaluate([0, 0, 0, 0, 0, 1]))  
+# Process the cleaned dataset
+waterTData = []
+with open('cleaned_waterQ.csv', mode='r') as file:
+    reader = csv.reader(file)
+    next(reader)  # Skip the header row
+    for row in reader:
+        line = ",".join(row)
+        try:
+            inputs, output = reverseparse_line(line)
+            waterTData.append((inputs, output))
+        except ValueError as e:
+            print(f"Skipping invalid line: {e}")
 
-# h_data = [
-#     ([0, 0], [0]),
-#     ([0, 1], [1]),
-#     ([1, 0], [1]),
-#     ([1, 1], [0]),
-    
-# ]
+# Normalize the data and train the neural network
 
-# h = NeuralNet(2, 1, 1)
-# h.train(h_data)
+waterTData = normalize(waterTData)
+wat = NeuralNet(9, 20, 1)  
+wat.train(waterTData, learning_rate=0.01)
+print(wat.get_ih_weights())
+print()
+print(wat.get_ho_weights())
+# print(wat.evaluate([]))
 
-# print(h.get_ih_weights())
-# print()
-# print(h.get_ho_weights())
-# print(h.evaluate([0, 0]))  
-# print(h.evaluate([0, 1]))  
-# print(h.evaluate([1, 0]))  
-# print(h.evaluate([1, 1]))
-# h_data = [
-#     ([0.9, 0.6,0.8,0.3,0.1], [1.0]),
-#     ([0.8, 0.8,0.4,0.6,0.4], [1.0]),
-#     ([0.7, 0.2,0.4,0.6,0.3], [1.0]),
-#     ([0.5, 0.5,0.8,0.4,0.8], [0.0]),
-#     ([0.3, 0.1,0.6,0.8,0.8], [0.0]),
-#     ([0.6, 0.3,0.4,0.3,0.6], [0.0]),
-    
-# ]
-
-# h = NeuralNet(5, 9, 1)
-# h.train(h_data)
-
-# print(h.get_ih_weights())
-# print()
-# print(h.get_ho_weights())
-# print(h.evaluate([1.0,1.0,1.0,0.1,0.1]))  
-# print(h.evaluate([0.5,0.2,0.1,0.7,0.7]))  
-# print(h.evaluate([0.8,0.3,0.3,0.3,0.8]))  
-# print(h.evaluate([0.9,0.8,0.8,0.3,0.6]))
-
-
-#ph,Hardness,Solids,Chloramines,Sulfate,Conductivity,Organic_carbon,Trihalomethanes,Turbidity,Potability
-
-
-df = pd.read_csv("waterQ.csv")
-
-
-
-
-waterData=normalize(waterData)
-
-wa=NeuralNet(9,5,1)
-wa.train(waterData)
-print(wa.get_ih_weights())
-print(wa.get_ho_weights())
