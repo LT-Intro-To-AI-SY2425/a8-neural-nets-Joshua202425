@@ -58,7 +58,6 @@ waterTData = normalize(waterTData)
 wat = NeuralNet(9, 20, 1)  
 wat.train(waterTData, learning_rate=0.01)
 print(wat.get_ih_weights())
-print()
 print(wat.get_ho_weights())
-# print(wat.evaluate([]))
+
 
